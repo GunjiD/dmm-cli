@@ -1,10 +1,11 @@
 package main
 
 import (
-	"net/http/httputil"
-	//	"net/url"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"github.com/d-gunji/api/dmm-cli/actress"
 )
 
 //ActressSearch の結果を代入
@@ -51,27 +52,32 @@ type ActressSearch struct {
 }
 
 func main() {
-	req, err := http.NewRequest("GET", "https://webservice.recruit.co.jp/hotpepper/gourmet/v1/", nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+
+	data := new(actress.ActressSearch)
+	GetActress(data)
+	fmt.Println(data.Result)
+}
+
+//GetActress は引数の data にGetRequestの結果を返します
+func GetActress(data *actress.ActressSearch) {
+	req, _ := http.NewRequest("GET", "https://api.dmm.com/affiliate/v3/ActressSearch", nil)
 
 	query := req.URL.Query()
-	query.Add("key", "")
+	query.Add("api_id", "")
+	query.Add("affiliate_id", "")
+	query.Add("keyword", "小倉")
+	query.Add("output", "json")
 
 	req.URL.RawQuery = query.Encode() //reqのクエリパラメータを設定。リファレンス参照
-	fmt.Println(req.URL.String())
-	client := new(http.Client)
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	dumpResp, _ := httputil.DumpResponse(resp, true)
-	fmt.Printf("%s", dumpResp)
-	//関数を抜ける際にresponceをclose
+	client := new(http.Client)
+	resp, _ := client.Get(req.URL.String())
+
+	byteArray, _ := ioutil.ReadAll(resp.Body)
+
+	jsonBytes := ([]byte)(byteArray)
+
 	defer resp.Body.Close()
+	json.Unmarshal(jsonBytes, data)
 
 }
